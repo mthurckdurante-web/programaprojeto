@@ -26,7 +26,7 @@ class Investimento:
 
 
 class Jogador:
-    def __init__(self, id, nome, salario, patrimonio_inicial, membros_familia, patrimonio_atual=None, saldo_fixa=0.0):
+    def __init__(self, id, nome, salario, patrimonio_inicial, membros_familia, patrimonio_atual=None, saldo_fixa=0.0, parcelas_carro=None):
         self.id = int(id)
         self.nome = str(nome)
         self.salario = float(salario)
@@ -34,12 +34,26 @@ class Jogador:
         self.patrimonio_atual = float(patrimonio_inicial if patrimonio_atual is None else patrimonio_atual)
         self.membros_familia = int(membros_familia)
         self.investimento = Investimento(saldo_fixa)
+        # Armazena uma lista com o valor de amortização de cada parcela restante (ex: [100, 100, 100...])
+        self.parcelas_carro = list(parcelas_carro) if parcelas_carro is not None else []
         
     @property
     def variacao_patrimonio(self) -> float:
         if self.patrimonio_inicial == 0:
             return 0.0
         return ((self.patrimonio_atual - self.patrimonio_inicial) / self.patrimonio_inicial) * 100
+
+    def calcular_proxima_parcela_com_juros(self, taxa_juros=0.01) -> float:
+        """Calcula o valor da próxima parcela usando amortização constante + juros sobre o saldo devedor"""
+        if not self.parcelas_carro:
+            return 0.0
+        
+        amortizacao_atual = self.parcelas_carro[0]
+        saldo_devedor_atual = sum(self.parcelas_carro)
+        
+        # Juros cobrados sobre o saldo devedor que restava na rodada
+        juros = saldo_devedor_atual * taxa_juros
+        return amortizacao_atual + juros
 
     def exportar_estado(self):
         return {
@@ -49,7 +63,8 @@ class Jogador:
             "patrimonio_inicial": self.patrimonio_inicial,
             "patrimonio_atual": self.patrimonio_atual,
             "membros_familia": self.membros_familia,
-            "saldo_fixa": self.investimento.renda_fixa_acumulado
+            "saldo_fixa": self.investimento.renda_fixa_acumulado,
+            "parcelas_carro": self.parcelas_carro
         }
 
 
@@ -57,13 +72,10 @@ class Jogador:
 # GERENCIAMENTO DE ESTADO DO STREAMLIT (SEGURO)
 # ==========================================
 
-# MECANISMO DE LIMPEZA AUTOMÁTICA EM CASO DE ERRO DE ESTRUTURA ANTIGA
 try:
     if "jogadores_dados" in st.session_state:
-        # Testa se conseguimos converter o primeiro item para garantir consistência
         teste_dados = st.session_state.jogadores_dados
         if isinstance(teste_dados, list) and len(teste_dados) > 0:
-            # Verifica se as chaves básicas necessárias existem no dicionário antigo
             if not all(k in teste_dados[0] for k in ["id", "nome", "salario"]):
                 st.session_state.clear()
         else:
@@ -71,7 +83,6 @@ try:
 except Exception:
     st.session_state.clear()
 
-# Inicialização padrão (Caso tenha sido resetado no passo acima)
 if "jogadores_dados" not in st.session_state:
     nomes_padrao = ["Ana", "Bruno", "Carlos", "Diana", "Eduardo", "Fernanda"]
     st.session_state.jogadores_dados = [
@@ -82,7 +93,8 @@ if "jogadores_dados" not in st.session_state:
             "patrimonio_inicial": 5000.0 + (i * 1000),
             "patrimonio_atual": 5000.0 + (i * 1000),
             "membros_familia": 2 + (i % 3),
-            "saldo_fixa": 0.0
+            "saldo_fixa": 0.0,
+            "parcelas_carro": []
         }
         for i, nome in enumerate(nomes_padrao)
     ]
@@ -93,19 +105,20 @@ if "historico" not in st.session_state:
 if "historico_estados" not in st.session_state:
     st.session_state.historico_estados = []
 
-# Reconstrói os objetos Jogador de forma à prova de falhas
 jogadores = []
 for dados in st.session_state.jogadores_dados:
     try:
         jogadores.append(Jogador(**dados))
     except TypeError:
-        # Se falhar aqui por incompatibilidade de argumentos, limpa tudo e recarrega a página
         st.session_state.clear()
         st.rerun()
 
 
 def salvar_estado_para_backup():
-    copia = [dados.copy() for dados in st.session_state.jogadores_dados]
+    copia = [
+        {**d, "parcelas_carro": list(d["parcelas_carro"])} 
+        for d in st.session_state.jogadores_dados
+    ]
     st.session_state.historico_estados.append(copia)
     if len(st.session_state.historico_estados) > 20:
         st.session_state.historico_estados.pop(0)
@@ -146,14 +159,21 @@ with col_esquerda:
         cor_var = "green" if j.variacao_patrimonio >= 0 else "red"
         titulo_card = f"👑 {j.nome} (LÍDER)" if eh_lider else f"👤 {j.nome}"
         
-        with st.expander(f"{titulo_card} | Var: :{cor_var}[{j.variacao_patrimonio:+.1f}%] | Patr: R${j.patrimonio_atual:.2f}", expanded=True):
+        # Detalhe sobre financiamentos ativos
+        detalhe_carro = f" | 🚗 Parc: {len(j.parcelas_carro)}x" if j.parcelas_carro else ""
+        
+        with st.expander(f"{titulo_card} | Var: :{cor_var}[{j.variacao_patrimonio:+.1f}%] | Patr: R${j.patrimonio_atual:.2f}{detalhe_carro}", expanded=True):
             c1, c2, c3 = st.columns(3)
             c1.write(f"**Salário:** R${j.salario:.2f}")
             c2.write(f"**Família:** {j.membros_familia} pessoas")
-            c3.write(f"**Renda Fixa:** R${j.investimento.renda_fixa_acumulado:.2f}")
+            if j.parcelas_carro:
+                prox_parc = j.calcular_proxima_parcela_com_juros(taxa_juros=0.01)
+                c3.write(f"**Próx. Parcela Carro:** R${prox_parc:.2f}")
+            else:
+                c3.write(f"**Renda Fixa:** R${j.investimento.renda_fixa_acumulado:.2f}")
 
     st.subheader("🎲 Painel de Controle de Casas")
-    tab_casas, tab_ajustes = st.tabs(["Casas do Tabuleiro", "Ajustes Manuais"])
+    tab_casas, tab_ajustes, tab_financiamento = st.tabs(["Casas do Tabuleiro", "Ajustes Manuais", "🚗 Pagar Parcela (SAC)"])
     
     with tab_casas:
         grid1 = st.columns(3)
@@ -169,11 +189,19 @@ with col_esquerda:
             atualizar_session_state()
             st.rerun()
 
-        if grid1[1].button("🚗 C2: Comprar Carro", use_container_width=True):
+        if grid1[1].button("🚗 C2: Carro Parcelado (30x)", use_container_width=True):
             salvar_estado_para_backup()
-            valor_carro = j_ativo.salario * 4.5
-            j_ativo.patrimonio_atual -= valor_carro
-            registrar_log(j_ativo.nome, "C2: Comprou Carro (450% Salário)", -valor_carro)
+            valor_total_carro = j_ativo.salario * 4.5
+            # Dividido em exatamente 30 parcelas de amortização constante fixa
+            amortizacao_fixa = valor_total_carro / 30.0
+            j_ativo.parcelas_carro = [amortizacao_fixa] * 30
+            
+            registrar_log(
+                j_ativo.nome, 
+                "C2: Comprou Carro Financiado", 
+                0, 
+                f"Valor Total: R${valor_total_carro:.2f} parcelado em 30x de R${amortizacao_fixa:.2f} base + juros de amortização por rodada."
+            )
             atualizar_session_state()
             st.rerun()
 
@@ -213,7 +241,7 @@ with col_esquerda:
             st.rerun()
 
         if grid3[0].button("🐯 C7: Tigrinho", use_container_width=True):
-            st.info("Use a aba de Ajustes Manuais para adicionar valores livres.")
+            st.info("Use a aba de Ajustes Manuais para adicionar valores livres de Sorte ou Azar.")
 
         if grid3[1].button("📈 C8: Aplicar Renda Fixa", use_container_width=True):
             salvar_estado_para_backup()
@@ -270,7 +298,6 @@ with col_esquerda:
                     j_ativo.patrimonio_atual -= val_ajuste
                     registrar_log(j_ativo.nome, "Ajuste Manual: Saque", -val_ajuste)
                 elif tipo_operacao == "Alterar Salário Direto":
-                    antigo = j_ativo.salario
                     j_ativo.salario = val_ajuste
                     registrar_log(j_ativo.nome, "Ajuste Manual: Alteração Salarial", 0)
                 
@@ -282,6 +309,38 @@ with col_esquerda:
                 st.session_state.jogadores_dados = st.session_state.historico_estados.pop()
                 st.session_state.historico.insert(0, "[Sistema] Ação Desfeita.")
                 st.rerun()
+
+    with tab_financiamento:
+        st.write(f"### Financiamento do Carro (SAC) — `{j_ativo.nome}`")
+        if j_ativo.parcelas_carro:
+            total_restante = sum(j_ativo.parcelas_carro)
+            num_restantes = len(j_ativo.parcelas_carro)
+            
+            # Taxa pedagógica padrão de 1% por rodada sobre o saldo devedor
+            taxa_simulada = 0.01 
+            prox_total = j_ativo.calcular_proxima_parcela_com_juros(taxa_juros=taxa_simulada)
+            part_amort = j_ativo.parcelas_carro[0]
+            part_juros = prox_total - part_amort
+            
+            st.metric("Saldo Devedor Total", f"R${total_restante:.2f}", f"{num_restantes} parcelas restantes")
+            
+            st.info(f"**Detalhamento da Próxima Parcela:**\n* **Amortização:** R${part_amort:.2f}\n* **Juros do Período (1%):** R${part_juros:.2f}\n* **Total a Cobrar:** R${prox_total:.2f}")
+            
+            if st.button(f"💵 Pagar Próxima Parcela (R${prox_total:.2f})", use_container_width=True):
+                salvar_estado_para_backup()
+                j_ativo.patrimonio_atual -= prox_total
+                j_ativo.parcelas_carro.pop(0)  # Remove a parcela paga
+                
+                registrar_log(
+                    j_ativo.nome, 
+                    "Pagou Parcela Carro", 
+                    -prox_total, 
+                    f"Amortização: R${part_amort:.2f} | Juros: R${part_juros:.2f}. Restam {len(j_ativo.parcelas_carro)}x"
+                )
+                atualizar_session_state()
+                st.rerun()
+        else:
+            st.write("Este jogador não possui nenhum financiamento de veículo pendente.")
 
 with col_direita:
     st.subheader("🏆 Ranking Atual")
@@ -298,4 +357,3 @@ with col_direita:
     st.subheader("📋 Histórico de Eventos")
     if st.session_state.historico:
         st.text_area(label="Logs", value="\n".join(st.session_state.historico), height=300, disabled=True)
-        
