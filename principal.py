@@ -14,7 +14,7 @@ st.set_page_config(
 
 class Investimento:
     def __init__(self, saldo_fixa=0.0):
-        self.renda_fixa_acumulado = saldo_fixa
+        self.renda_fixa_acumulado = float(saldo_fixa)
 
     def investir_renda_fixa(self, valor: float):
         self.renda_fixa_acumulado += valor
@@ -26,13 +26,13 @@ class Investimento:
 
 
 class Jogador:
-    def __init__(self, id_jog: int, nome: str, salario: float, patrimonio_inicial: float, membros_familia: int, patrimonio_atual=None, saldo_fixa=0.0):
-        self.id = id_jog
-        self.nome = nome
-        self.salario = salario
-        self.patrimonio_inicial = patrimonio_inicial
-        self.patrimonio_atual = patrimonio_inicial if patrimonio_atual is None else patrimonio_atual
-        self.membros_familia = membros_familia
+    def __init__(self, id, nome, salario, patrimonio_inicial, membros_familia, patrimonio_atual=None, saldo_fixa=0.0):
+        self.id = int(id)
+        self.nome = str(nome)
+        self.salario = float(salario)
+        self.patrimonio_inicial = float(patrimonio_inicial)
+        self.patrimonio_atual = float(patrimonio_inicial if patrimonio_atual is None else patrimonio_atual)
+        self.membros_familia = int(membros_familia)
         self.investimento = Investimento(saldo_fixa)
         
     @property
@@ -54,13 +54,24 @@ class Jogador:
 
 
 # ==========================================
-# GERENCIAMENTO DE ESTADO DO STREAMLIT
+# GERENCIAMENTO DE ESTADO DO STREAMLIT (SEGURO)
 # ==========================================
 
-# Força a limpeza se a estrutura estiver corrompida
-if "jogadores_dados" in st.session_state and not isinstance(st.session_state.jogadores_dados, list):
+# MECANISMO DE LIMPEZA AUTOMÁTICA EM CASO DE ERRO DE ESTRUTURA ANTIGA
+try:
+    if "jogadores_dados" in st.session_state:
+        # Testa se conseguimos converter o primeiro item para garantir consistência
+        teste_dados = st.session_state.jogadores_dados
+        if isinstance(teste_dados, list) and len(teste_dados) > 0:
+            # Verifica se as chaves básicas necessárias existem no dicionário antigo
+            if not all(k in teste_dados[0] for k in ["id", "nome", "salario"]):
+                st.session_state.clear()
+        else:
+            st.session_state.clear()
+except Exception:
     st.session_state.clear()
 
+# Inicialização padrão (Caso tenha sido resetado no passo acima)
 if "jogadores_dados" not in st.session_state:
     nomes_padrao = ["Ana", "Bruno", "Carlos", "Diana", "Eduardo", "Fernanda"]
     st.session_state.jogadores_dados = [
@@ -82,15 +93,15 @@ if "historico" not in st.session_state:
 if "historico_estados" not in st.session_state:
     st.session_state.historico_estados = []
 
-# Reconstrói os objetos de forma segura
+# Reconstrói os objetos Jogador de forma à prova de falhas
 jogadores = []
 for dados in st.session_state.jogadores_dados:
-    if isinstance(dados, dict) and "id" in dados:
+    try:
         jogadores.append(Jogador(**dados))
-
-if not jogadores:
-    st.session_state.clear()
-    st.rerun()
+    except TypeError:
+        # Se falhar aqui por incompatibilidade de argumentos, limpa tudo e recarrega a página
+        st.session_state.clear()
+        st.rerun()
 
 
 def salvar_estado_para_backup():
@@ -124,7 +135,6 @@ with col_esquerda:
     st.subheader("👤 Status dos Jogadores")
     
     lider = max(jogadores, key=lambda x: x.variacao_patrimonio) if jogadores else None
-    
     lista_nomes = [j.nome for j in jogadores]
     nome_selecionado = st.radio("**Selecione o jogador que caiu na casa:**", lista_nomes, horizontal=True)
     j_ativo = next(j for j in jogadores if j.nome == nome_selecionado)
@@ -143,7 +153,7 @@ with col_esquerda:
             c3.write(f"**Renda Fixa:** R${j.investimento.renda_fixa_acumulado:.2f}")
 
     st.subheader("🎲 Painel de Controle de Casas")
-    tab_casas, tab_ajustes = st.tabs(["Casas do Tabuleiro", "Ajustes Manuais e Edição"])
+    tab_casas, tab_ajustes = st.tabs(["Casas do Tabuleiro", "Ajustes Manuais"])
     
     with tab_casas:
         grid1 = st.columns(3)
@@ -155,7 +165,7 @@ with col_esquerda:
             salvar_estado_para_backup()
             impacto = j_ativo.salario * 2
             j_ativo.patrimonio_atual -= impacto
-            registrar_log(j_ativo.nome, "C1: Juros 3000%", -impacto, "Penalidade aplicada")
+            registrar_log(j_ativo.nome, "C1: Juros 3000%", -impacto)
             atualizar_session_state()
             st.rerun()
 
@@ -180,7 +190,7 @@ with col_esquerda:
             porcentagem = 0.05 * j_ativo.membros_familia
             custo = j_ativo.salario * porcentagem
             j_ativo.patrimonio_atual -= custo
-            registrar_log(j_ativo.nome, f"C4: Compra do Mês ({porcentagem*100:.0f}%)", -custo)
+            registrar_log(j_ativo.nome, f"C4: Compra do Mês", -custo)
             atualizar_session_state()
             st.rerun()
 
@@ -203,7 +213,7 @@ with col_esquerda:
             st.rerun()
 
         if grid3[0].button("🐯 C7: Tigrinho", use_container_width=True):
-            st.info("Use a aba de Ajustes Manuais para adicionar valores livres de ganho ou perda.")
+            st.info("Use a aba de Ajustes Manuais para adicionar valores livres.")
 
         if grid3[1].button("📈 C8: Aplicar Renda Fixa", use_container_width=True):
             salvar_estado_para_backup()
@@ -226,16 +236,14 @@ with col_esquerda:
 
         if grid4[0].button("🚀 C9: Promoção (+25%)", use_container_width=True):
             salvar_estado_para_backup()
-            aumento = j_ativo.salario * 0.25
-            j_ativo.salario += aumento
+            j_ativo.salario *= 1.25
             registrar_log(j_ativo.nome, "C9: Promoção de Cargo", 0)
             atualizar_session_state()
             st.rerun()
 
         if grid4[1].button("📉 C10: Redução (-10%)", use_container_width=True):
             salvar_estado_para_backup()
-            queda = j_ativo.salario * 0.10
-            j_ativo.salario -= queda
+            j_ativo.salario *= 0.90
             registrar_log(j_ativo.nome, "C10: Redução Salarial", 0)
             atualizar_session_state()
             st.rerun()
@@ -248,7 +256,7 @@ with col_esquerda:
             st.rerun()
 
     with tab_ajustes:
-        with st.form("form_ajustes"):
+        with st.form("form_ajustes_seguro"):
             val_ajuste = st.number_input("Valor do Ajuste (R$)", min_value=0.0, step=100.0)
             tipo_operacao = st.selectbox("Operação", ["Adicionar ao Patrimônio", "Retirar do Patrimônio", "Alterar Salário Direto"])
             botao_submeter = st.form_submit_button("Confirmar Ajuste Manual")
@@ -290,3 +298,4 @@ with col_direita:
     st.subheader("📋 Histórico de Eventos")
     if st.session_state.historico:
         st.text_area(label="Logs", value="\n".join(st.session_state.historico), height=300, disabled=True)
+        
