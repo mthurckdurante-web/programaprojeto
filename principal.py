@@ -1,7 +1,7 @@
 import datetime
 import streamlit as st
 
-# Configuração da página do Streamlit (deve ser o primeiro comando)
+# Configuração da página do Streamlit
 st.set_page_config(
     page_title="Gerenciador de Tabuleiro - Educação Financeira",
     page_icon="💰",
@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# CLASSES DE NEGÓCIO (LOGICA DO JOGO)
+# CLASSES DE NEGÓCIO (LÓGICA DO JOGO)
 # ==========================================
 
 class Investimento:
@@ -42,7 +42,6 @@ class Jogador:
         return ((self.patrimonio_atual - self.patrimonio_inicial) / self.patrimonio_inicial) * 100
 
     def exportar_estado(self):
-        """Retorna um dicionário com os dados atuais para salvar no st.session_state"""
         return {
             "id": self.id,
             "nome": self.nome,
@@ -58,9 +57,11 @@ class Jogador:
 # GERENCIAMENTO DE ESTADO DO STREAMLIT
 # ==========================================
 
-# Como a web "reseta" a cada clique, usamos o st.session_state para manter o jogo vivo
+# Força a limpeza se a estrutura estiver corrompida
+if "jogadores_dados" in st.session_state and not isinstance(st.session_state.jogadores_dados, list):
+    st.session_state.clear()
+
 if "jogadores_dados" not in st.session_state:
-    # Inicializa os 6 jogadores padrão na primeira execução
     nomes_padrao = ["Ana", "Bruno", "Carlos", "Diana", "Eduardo", "Fernanda"]
     st.session_state.jogadores_dados = [
         {
@@ -81,12 +82,18 @@ if "historico" not in st.session_state:
 if "historico_estados" not in st.session_state:
     st.session_state.historico_estados = []
 
-# Reconstruindo a lista de objetos Jogador a partir do estado da sessão
-jogadores = [Jogador(**dados) for dados in st.session_state.jogadores_dados]
+# Reconstrói os objetos de forma segura
+jogadores = []
+for dados in st.session_state.jogadores_dados:
+    if isinstance(dados, dict) and "id" in dados:
+        jogadores.append(Jogador(**dados))
+
+if not jogadores:
+    st.session_state.clear()
+    st.rerun()
 
 
 def salvar_estado_para_backup():
-    """Guarda uma cópia exata antes de qualquer alteração (Sistema de Desfazer)"""
     copia = [dados.copy() for dados in st.session_state.jogadores_dados]
     st.session_state.historico_estados.append(copia)
     if len(st.session_state.historico_estados) > 20:
@@ -94,7 +101,6 @@ def salvar_estado_para_backup():
 
 
 def atualizar_session_state():
-    """Persiste as mudanças dos objetos de volta para a sessão do Streamlit"""
     st.session_state.jogadores_dados = [j.exportar_estado() for j in jogadores]
 
 
@@ -111,30 +117,23 @@ def registrar_log(jogador_nome: str, casa_ou_acao: str, valor: float, detalhe: s
 # ==========================================
 
 st.title("🏆 Gerenciador de Tabuleiro - Educação Financeira")
-st.caption("Desenvolvido para navegadores utilizando Streamlit Cloud")
 
-# Criando duas colunas principais na tela web
 col_esquerda, col_direita = st.columns([3, 2])
 
 with col_esquerda:
     st.subheader("👤 Status dos Jogadores")
     
-    # Encontrar o líder atual
-    lider = max(jogadores, key=lambda x: x.variacao_patrimonio)
+    lider = max(jogadores, key=lambda x: x.variacao_patrimonio) if jogadores else None
     
-    # Criando o seletor radial para aplicar as jogadas
     lista_nomes = [j.nome for j in jogadores]
     nome_selecionado = st.radio("**Selecione o jogador que caiu na casa:**", lista_nomes, horizontal=True)
     j_ativo = next(j for j in jogadores if j.nome == nome_selecionado)
     
     st.write("---")
     
-    # Exibir os cards de status de cada jogador
     for j in jogadores:
         eh_lider = (lider and lider.id == j.id)
         cor_var = "green" if j.variacao_patrimonio >= 0 else "red"
-        
-        # Destaca visualmente o líder
         titulo_card = f"👑 {j.nome} (LÍDER)" if eh_lider else f"👤 {j.nome}"
         
         with st.expander(f"{titulo_card} | Var: :{cor_var}[{j.variacao_patrimonio:+.1f}%] | Patr: R${j.patrimonio_atual:.2f}", expanded=True):
@@ -143,13 +142,10 @@ with col_esquerda:
             c2.write(f"**Família:** {j.membros_familia} pessoas")
             c3.write(f"**Renda Fixa:** R${j.investimento.renda_fixa_acumulado:.2f}")
 
-    # Painel de Ações do Tabuleiro
     st.subheader("🎲 Painel de Controle de Casas")
-    
     tab_casas, tab_ajustes = st.tabs(["Casas do Tabuleiro", "Ajustes Manuais e Edição"])
     
     with tab_casas:
-        # Organização dos botões em grid na aba de Casas
         grid1 = st.columns(3)
         grid2 = st.columns(3)
         grid3 = st.columns(3)
@@ -157,8 +153,7 @@ with col_esquerda:
         
         if grid1[0].button("⚠️ C1: Juros 3000%", use_container_width=True):
             salvar_estado_para_backup()
-            # Simulando inputs via formulário simples expandido temporariamente abaixo ou valores padrão seguros
-            impacto = j_ativo.salario * 2  # Regra simplificada rápida para ambiente web
+            impacto = j_ativo.salario * 2
             j_ativo.patrimonio_atual -= impacto
             registrar_log(j_ativo.nome, "C1: Juros 3000%", -impacto, "Penalidade aplicada")
             atualizar_session_state()
@@ -168,7 +163,7 @@ with col_esquerda:
             salvar_estado_para_backup()
             valor_carro = j_ativo.salario * 4.5
             j_ativo.patrimonio_atual -= valor_carro
-            registrar_log(j_ativo.nome, "C2: Comprou Carro (450% Salário)", -valor_carro, "Registrado no patrimônio líquido")
+            registrar_log(j_ativo.nome, "C2: Comprou Carro (450% Salário)", -valor_carro)
             atualizar_session_state()
             st.rerun()
 
@@ -208,19 +203,17 @@ with col_esquerda:
             st.rerun()
 
         if grid3[0].button("🐯 C7: Tigrinho", use_container_width=True):
-            st.warning("Use o ajuste manual abaixo para inserir ganhos/perdas livres de Sorte ou Azar.")
+            st.info("Use a aba de Ajustes Manuais para adicionar valores livres de ganho ou perda.")
 
         if grid3[1].button("📈 C8: Aplicar Renda Fixa", use_container_width=True):
             salvar_estado_para_backup()
-            aporte = j_ativo.salario * 0.5  # Aporta metade de um salário de forma prática
+            aporte = j_ativo.salario * 0.5
             if j_ativo.patrimonio_atual >= aporte:
                 j_ativo.patrimonio_atual -= aporte
                 j_ativo.investimento.investir_renda_fixa(aporte)
                 registrar_log(j_ativo.nome, "C8: Aplicou Renda Fixa", -aporte)
                 atualizar_session_state()
                 st.rerun()
-            else:
-                st.error("Patrimônio insuficiente para alocar.")
 
         if grid3[2].button("🔄 C8: Render Fixa (5%)", use_container_width=True):
             salvar_estado_para_backup()
@@ -235,7 +228,7 @@ with col_esquerda:
             salvar_estado_para_backup()
             aumento = j_ativo.salario * 0.25
             j_ativo.salario += aumento
-            registrar_log(j_ativo.nome, "C9: Promoção de Cargo", 0, f"Novo salário: R${j_ativo.salario:.2f}")
+            registrar_log(j_ativo.nome, "C9: Promoção de Cargo", 0)
             atualizar_session_state()
             st.rerun()
 
@@ -243,7 +236,7 @@ with col_esquerda:
             salvar_estado_para_backup()
             queda = j_ativo.salario * 0.10
             j_ativo.salario -= queda
-            registrar_log(j_ativo.nome, "C10: Redução Salarial", 0, f"Novo salário: R${j_ativo.salario:.2f}")
+            registrar_log(j_ativo.nome, "C10: Redução Salarial", 0)
             atualizar_session_state()
             st.rerun()
 
@@ -255,14 +248,12 @@ with col_esquerda:
             st.rerun()
 
     with tab_ajustes:
-        st.write(f"Ajustando dados de: **{j_ativo.nome}**")
-        
-        # Formulário para ajustes rápidos manuais
         with st.form("form_ajustes"):
             val_ajuste = st.number_input("Valor do Ajuste (R$)", min_value=0.0, step=100.0)
             tipo_operacao = st.selectbox("Operação", ["Adicionar ao Patrimônio", "Retirar do Patrimônio", "Alterar Salário Direto"])
+            botao_submeter = st.form_submit_button("Confirmar Ajuste Manual")
             
-            if st.form_submit_state == st.form_submit_button("Confirmar Ajuste Manual"):
+            if botao_submeter:
                 salvar_estado_para_backup()
                 if tipo_operacao == "Adicionar ao Patrimônio":
                     j_ativo.patrimonio_atual += val_ajuste
@@ -273,24 +264,18 @@ with col_esquerda:
                 elif tipo_operacao == "Alterar Salário Direto":
                     antigo = j_ativo.salario
                     j_ativo.salario = val_ajuste
-                    registrar_log(j_ativo.nome, "Ajuste Manual: Alteração Salarial", 0, f"De R${antigo:.2f} para R${val_ajuste:.2f}")
+                    registrar_log(j_ativo.nome, "Ajuste Manual: Alteração Salarial", 0)
                 
                 atualizar_session_state()
                 st.rerun()
 
-        st.write("---")
-        # Botão Desfazer
         if st.button("🔄 DESFAZER ÚLTIMA AÇÃO (UNDO)", type="primary", use_container_width=True):
             if st.session_state.historico_estados:
                 st.session_state.jogadores_dados = st.session_state.historico_estados.pop()
-                st.session_state.historico.insert(0, "[Sistema] Ação Desfeita com sucesso.")
+                st.session_state.historico.insert(0, "[Sistema] Ação Desfeita.")
                 st.rerun()
-            else:
-                st.warning("Não há ações no histórico para desfazer.")
-
 
 with col_direita:
-    # Painel de Ranking
     st.subheader("🏆 Ranking Atual")
     jogadores_ordenados = sorted(jogadores, key=lambda x: x.variacao_patrimonio, reverse=True)
     
@@ -299,16 +284,9 @@ with col_direita:
         st.write(f"{medalha} **{j.nome}** | Var: `{j.variacao_patrimonio:+.2f}%` (Patr: R${j.patrimonio_atual:.2f})")
     
     if lider:
-        st.info(f"🎉 **Vencedor Atual:** {lider.nome} se o jogo terminasse agora!")
+        st.info(f"🎉 **Vencedor Atual:** {lider.nome}")
 
     st.write("---")
-    
-    # Painel de Histórico
     st.subheader("📋 Histórico de Eventos")
     if st.session_state.historico:
-        # Caixa de texto estilizada simulação de log
-        historico_texto = "\n".join(st.session_state.historico)
-        st.text_area(label="Logs da Partida", value=historico_texto, height=350, disabled=True)
-    else:
-        st.caption("Nenhum evento registrado ainda.")
-
+        st.text_area(label="Logs", value="\n".join(st.session_state.historico), height=300, disabled=True)
