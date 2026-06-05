@@ -262,7 +262,7 @@ with col_esquerda:
             val_ajuste = st.number_input("Valor do Ajuste (R$)", min_value=0.0, step=100.0)
             tipo_operacao = st.selectbox("Operação", ["Adicionar ao Patrimônio", "Retirar do Patrimônio", "Alterar Salário Direto"])
             
-            if st.form_submit_state = st.form_submit_button("Confirmar Ajuste Manual"):
+            if st.form_submit_state == st.form_submit_button("Confirmar Ajuste Manual"):
                 salvar_estado_para_backup()
                 if tipo_operacao == "Adicionar ao Patrimônio":
                     j_ativo.patrimonio_atual += val_ajuste
