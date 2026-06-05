@@ -308,7 +308,7 @@ with col_esquerda:
                     st.rerun()
 
 with col_direita:
-    st.subheader("🏆 Ranking de Patrimônio Líquico")
+    st.subheader("🏆 Ranking de Patrimônio Líquido")
     jogadores_ordenados = sorted(jogadores, key=lambda x: x.variacao_patrimonio, reverse=True)
     
     for idx, j in enumerate(jogadores_ordenados, 1):
