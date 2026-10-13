@@ -9,8 +9,6 @@ st.set_page_config(
     layout="wide"
 )
 
-DATA_INICIAL = datetime.date(2026, 1, 1)
-
 # ==========================================
 # CLASSES DE NEGÓCIO (LÓGICA DO JOGO)
 # ==========================================
@@ -31,7 +29,7 @@ class Investimento:
 class Jogador:
     def __init__(self, id, nome, salario, patrimonio_inicial, membros_familia,
                  patrimonio_atual=None, saldo_fixa=0.0, parcelas_casa=None,
-                 saldo_carro=0.0, meses_carro=0, tem_carro=False, data_jogo=None):
+                 saldo_carro=0.0, meses_carro=0, tem_carro=False, **_ignorado):
         self.id = int(id)
         self.nome = str(nome)
         self.salario = float(salario)
@@ -49,9 +47,6 @@ class Jogador:
         # Continua True mesmo depois de quitar o financiamento (o carro segue gerando manutenção)
         self.tem_carro = bool(tem_carro)
 
-        # Calendário do jogo: cada jogador tem sua própria data
-        self.data_jogo = data_jogo if data_jogo is not None else DATA_INICIAL
-
     @property
     def variacao_patrimonio(self) -> float:
         if self.patrimonio_inicial == 0:
@@ -62,7 +57,7 @@ class Jogador:
     # SALÁRIO E CONTAS DESCONTADAS DO SALÁRIO
     # ------------------------------------------
     def contas_do_salario(self):
-        """Contas menores que são descontadas do salário todo dia 1."""
+        """Contas menores que são descontadas do salário quando ele é recebido."""
         contas = [
             ("🛒 Compra do Mês", self.salario * 0.05 * self.membros_familia),
             ("💡 Luz", self.salario * 0.01 * self.membros_familia),
@@ -75,17 +70,11 @@ class Jogador:
     def salario_liquido_previsto(self) -> float:
         return self.salario - sum(valor for _, valor in self.contas_do_salario())
 
-    def dias_para_proximo_salario(self) -> int:
-        proximo = (self.data_jogo.replace(day=1) + datetime.timedelta(days=32)).replace(day=1)
-        return (proximo - self.data_jogo).days
-
-    def processar_virada_mes(self):
-        """Cai o salário e desconta as contas do salário (executado todo dia 1)."""
+    def receber_salario(self):
+        """Recebe o salário e desconta as contas do salário. Retorna as linhas de log."""
         logs = []
-        mes_ref = self.data_jogo.strftime("%m/%Y")
-
         self.patrimonio_atual += self.salario
-        logs.append(f"💰 Dia 01/{mes_ref}: salário recebido +R${self.salario:.2f}")
+        logs.append(f"💰 Salário recebido: +R${self.salario:.2f}")
 
         total_descontos = 0.0
         for nome_conta, valor in self.contas_do_salario():
@@ -93,16 +82,7 @@ class Jogador:
             total_descontos += valor
             logs.append(f"   ➖ {nome_conta}: -R${valor:.2f}")
 
-        logs.append(f"   ✅ Líquido do mês: R${self.salario - total_descontos:.2f}")
-        return logs
-
-    def avancar_dias(self, dias: int):
-        """Avança o calendário do jogador; a cada dia 1 que passa, paga o salário."""
-        logs = []
-        for _ in range(int(dias)):
-            self.data_jogo += datetime.timedelta(days=1)
-            if self.data_jogo.day == 1:
-                logs.extend(self.processar_virada_mes())
+        logs.append(f"   ✅ Líquido: R${self.salario - total_descontos:.2f}")
         return logs
 
     # ------------------------------------------
@@ -188,7 +168,6 @@ class Jogador:
             "saldo_carro": self.saldo_carro,
             "meses_carro": self.meses_carro,
             "tem_carro": self.tem_carro,
-            "data_jogo": self.data_jogo,
         }
 
 
@@ -198,23 +177,25 @@ class Jogador:
 
 if "jogadores_dados" not in st.session_state:
     nomes_padrao = ["Ana", "Bruno", "Carlos", "Diana", "Eduardo", "Fernanda"]
-    st.session_state.jogadores_dados = [
-        {
-            "id": i + 1,
-            "nome": nome,
-            "salario": 3000.0 + (i * 500),
-            "patrimonio_inicial": 5000.0 + (i * 1000),
-            "patrimonio_atual": 5000.0 + (i * 1000),
-            "membros_familia": 2 + (i % 3),
-            "saldo_fixa": 0.0,
-            "parcelas_casa": [],
-            "saldo_carro": 0.0,
-            "meses_carro": 0,
-            "tem_carro": False,
-            "data_jogo": DATA_INICIAL,
-        }
-        for i, nome in enumerate(nomes_padrao)
-    ]
+    dados_iniciais = []
+    logs_iniciais = []
+    for i, nome in enumerate(nomes_padrao):
+        novo = Jogador(
+            id=i + 1,
+            nome=nome,
+            salario=3000.0 + (i * 500),
+            patrimonio_inicial=5000.0 + (i * 1000),
+            membros_familia=2 + (i % 3),
+        )
+        # Primeiro salário já cai assim que o jogo começa (com as contas do salário descontadas)
+        for log in novo.receber_salario():
+            logs_iniciais.append(f"[Início] {nome} -> {log.strip()}")
+        # A variação do patrimônio parte do valor já com o primeiro salário
+        novo.patrimonio_inicial = novo.patrimonio_atual
+        dados_iniciais.append(novo.exportar_estado())
+
+    st.session_state.jogadores_dados = dados_iniciais
+    st.session_state.historico = list(reversed(logs_iniciais))
 
 if "historico" not in st.session_state:
     st.session_state.historico = []
@@ -241,22 +222,6 @@ def registrar_log(jogador_nome: str, casa_ou_acao: str, valor: float, detalhe: s
     msg = f"[{agora}] {jogador_nome} -> {casa_ou_acao}{val_str}. {detalhe}"
     st.session_state.historico.insert(0, msg)
 
-
-# ==========================================
-# BARRA LATERAL (CONFIGURAÇÃO DO CALENDÁRIO)
-# ==========================================
-
-st.sidebar.header("📅 Calendário do Jogo")
-st.sidebar.slider(
-    "Dias que passam a cada jogada",
-    min_value=1, max_value=31, value=10, key="dias_por_turno",
-    help="A cada jogada o calendário do jogador avança esse número de dias. "
-         "Sempre que passar pelo dia 1, o salário cai e as contas do salário são descontadas."
-)
-st.sidebar.caption(
-    "💰 Todo dia 1: cai o salário e são descontados automaticamente "
-    "Compra do Mês, Luz, Água e (se tiver carro) Reparo/Manutenção do Carro."
-)
 
 # ==========================================
 # INTERFACE VISUAL (STREAMLIT WEB)
@@ -305,13 +270,8 @@ with col_esquerda:
             else:
                 c3.write(f"**Renda Fixa:** R${j.investimento.renda_fixa_acumulado:.2f}")
 
-            # Calendário e previsão do próximo salário
-            d1, d2 = st.columns(2)
-            d1.write(f"📅 **Data:** {j.data_jogo.strftime('%d/%m/%Y')}")
-            d2.write(f"💰 **Próximo salário em:** {j.dias_para_proximo_salario()} dia(s)")
-
             descontos_txt = " · ".join(f"{nome_conta} R${valor:.2f}" for nome_conta, valor in j.contas_do_salario())
-            st.caption(f"Descontos do salário no dia 1: {descontos_txt}")
+            st.caption(f"Descontos ao receber o salário: {descontos_txt}")
             st.caption(f"💵 Líquido previsto: R${j.salario_liquido_previsto():.2f}")
 
             # Botão para abrir/fechar a tabela de amortização da casa (SAC)
@@ -325,8 +285,22 @@ with col_esquerda:
 
     st.subheader("🎲 Painel de Controle de Casas")
 
+    # Botão de salário: recebe o salário líquido (já descontando as contas do salário)
+    if st.button(
+        f"💰 Receber Salário - {j_ativo.nome} (líquido R${j_ativo.salario_liquido_previsto():.2f})",
+        type="primary",
+        use_container_width=True,
+    ):
+        salvar_estado_para_backup()
+        logs_salario = j_ativo.receber_salario()
+        # O histórico insere no topo, então registra de trás para frente para manter a ordem de leitura
+        for log_sal in reversed(logs_salario):
+            registrar_log(j_ativo.nome, "Salário", 0, log_sal.strip())
+        atualizar_session_state()
+        st.rerun()
+
     # Executa os descontos automáticos antes de aplicar a nova casa da rodada
-    def processar_rodada_com_segurança(acao_nome, valor_imediato=0.0, detalhe_acao="", dias=None):
+    def processar_rodada_com_segurança(acao_nome, valor_imediato=0.0, detalhe_acao=""):
         salvar_estado_para_backup()
 
         # 1. Paga automaticamente o que o jogador dever nesta rodada (parcelas)
@@ -335,16 +309,10 @@ with col_esquerda:
         # 2. Aplica a casa que ele acabou de cair
         j_ativo.patrimonio_atual += valor_imediato
 
-        # 3. Avança o calendário (se passar pelo dia 1, cai o salário e desconta as contas)
-        dias_avanco = dias if dias is not None else st.session_state.dias_por_turno
-        logs_calendario = j_ativo.avancar_dias(dias_avanco)
-
         # Registra no log
         registrar_log(j_ativo.nome, acao_nome, valor_imediato, detalhe_acao)
         for log_auto in logs_pagos:
             registrar_log(j_ativo.nome, "Cobrança Automática de Turno", 0, log_auto)
-        for log_cal in logs_calendario:
-            registrar_log(j_ativo.nome, "📅 Virada de Mês", 0, log_cal.strip())
 
         atualizar_session_state()
         st.rerun()
@@ -354,7 +322,7 @@ with col_esquerda:
     grid3 = st.columns(3)
 
     # --- BOTÕES DAS CASAS ---
-    # Obs.: Compra do Mês, Luz e Água agora são descontadas do salário (dia 1)
+    # Obs.: Compra do Mês, Luz e Água agora são descontadas do salário (botão Receber Salário)
     if grid1[0].button("🏠 C1: Comprar Casa (Amortização SAC)", use_container_width=True):
         valor_casa = j_ativo.salario * 12  # Casa custa 12x o Salário
         amortizacao_fixa = valor_casa / 20.0  # Parcelado em 20 rodadas de amortização constante
@@ -399,15 +367,6 @@ with col_esquerda:
     if grid3[2].button("🏥 C11: Hospital (-R$300)", use_container_width=True):
         processar_rodada_com_segurança("C11: Despesa de Saúde", -300)
 
-    # Pula direto para o próximo dia 1 (útil para testar ou avançar o mês)
-    if st.button("📅 Avançar até o dia 1 (receber salário)", use_container_width=True):
-        dias_ate_salario = j_ativo.dias_para_proximo_salario()
-        processar_rodada_com_segurança(
-            "Avançou até o dia 1", 0,
-            f"Calendário avançou {dias_ate_salario} dia(s) até o próximo salário.",
-            dias=dias_ate_salario,
-        )
-
     # Painel extra para ajustes manuais ou correções rápidas
     st.write("---")
     with st.expander("🛠️ Ajustes Técnicos Manuais e Sistema Undo"):
@@ -434,7 +393,10 @@ with col_direita:
 
     for idx, j in enumerate(jogadores_ordenados, 1):
         medalha = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else f"{idx}º"
-        st.write(f"{medalha} **{j.nome}** | Var: `{j.variacao_patrimonio:+.2f}%` (Patr: R${j.patrimonio_atual:.2f})")
+        st.write(
+            f"{medalha} **{j.nome}** | Var: `{j.variacao_patrimonio:+.2f}%` "
+            f"(Patr: R${j.patrimonio_atual:.2f}) | 💰 Salário: R${j.salario:.2f}"
+        )
 
     if lider:
         st.info(f"🎉 **Ganhador parcial:** {lider.nome}")
