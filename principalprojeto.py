@@ -1,4 +1,14 @@
-st.write(f"**Classe {p['classe']}** · {p['profissao']} · {p['estado_civil']} · Filhos: {p['filhos']}")
+nome = st.selectbox(
+    "Escolha o jogador",
+    list(PERSONAGENS.keys())
+)
+
+p = PERSONAGENS[nome]
+
+st.write(
+    f"**Classe {p['classe']}** · "
+    f"{p['profissao']} · {p['estado_civil']}"
+)
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("Salário atual", dinheiro(j["salario"]))
 m2.metric("Saldo disponível", dinheiro(j["saldo"]))
