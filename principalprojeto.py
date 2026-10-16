@@ -233,7 +233,9 @@ tab_eventos, tab_bens, tab_despesas, tab_historico = st.tabs(
 # ============================================================
 with tab_eventos:
     st.subheader("Ações do tabuleiro")
-    c1, c2, c3 = st.columns(3)with c1:
+    c1, c2, c3 = st.columns(3)
+    
+    with c1:
         if st.button("💵 Receber salário", use_container_width=True):
             aplicar_evento(nome, "Salário recebido", j["salario"])
             st.rerun()
