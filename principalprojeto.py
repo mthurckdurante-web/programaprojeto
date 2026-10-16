@@ -315,7 +315,8 @@ with tab_bens:
                 j["saldo"] -= valor_pago
                 j["divida_casa"] -= valor_pago
                 registrar(nome, f"Amortização da casa: pagou {dinheiro(valor_pago)}.")
-            st.rerun()with coluna_carro:
+            st.rerun()
+            with coluna_carro:
         st.markdown("### 🚗 Carro")
         st.write(f"Preço do carro: **{dinheiro(preco_carro)}**")
         st.write(f"Valor do bem: {dinheiro(j['carro'])}")
