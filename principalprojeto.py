@@ -96,6 +96,7 @@ def inicializar_jogadores():
             "salario": salario,
             # O PDF não define patrimônio inicial; usamos um salário como referência.
             "saldo": salario,
+            "reserva": 0.0,
             "patrimonio_inicial": salario,
             "casa": 0.0,
             "divida_casa": 0.0,
@@ -121,6 +122,7 @@ def patrimonio(nome):
     jogador = st.session_state.jogadores[nome]
     return (
         jogador["saldo"]
+        + jogador.get("reserva", 0.0)
         + jogador["casa"]
         + jogador["carro"]
         - jogador["divida_casa"]
@@ -149,6 +151,7 @@ for nome_personagem, dados_personagem in PERSONAGENS.items():
         st.session_state.jogadores[nome_personagem] = {
             "salario": salario,
             "saldo": salario,
+            "reserva": 0.0,
             "patrimonio_inicial": salario,
             "casa": 0.0,
             "divida_casa": 0.0,
@@ -157,6 +160,10 @@ for nome_personagem, dados_personagem in PERSONAGENS.items():
             "historico": ["Jogador adicionado à partida."],
             "meses": 0,
         }
+
+# Compatibilidade com partidas iniciadas em versões anteriores
+for jogador_existente in st.session_state.jogadores.values():
+    jogador_existente.setdefault("reserva", 0.0)
 
 # ============================================================
 # INTERFACE
@@ -225,48 +232,200 @@ tab_eventos, tab_bens, tab_despesas, tab_historico = st.tabs(
 )
 
 # ============================================================
-# EVENTOS
+# EVENTOS DO TABULEIRO (30 casas)
 # ============================================================
-with tab_eventos:
-    st.subheader("Ações do tabuleiro")
-    c1, c2, c3 = st.columns(3)
-    
-    with c1:
-        if st.button("💵 Receber salário", use_container_width=True):
-            aplicar_evento(nome, "Salário recebido", j["salario"])
-            st.rerun()
+def executar_casa(numero, nome_jogador):
+    jogador = st.session_state.jogadores[nome_jogador]
+    saldo = jogador["saldo"]
 
-        if st.button("📈 Foi promovido (+15%)", use_container_width=True):
+    if numero == 1:
+        aplicar_evento(nome_jogador, "Dia do pagamento (salário)", 3000)
+    elif numero == 2:
+        valor = max(0, jogador["saldo"] * 0.10)
+        jogador["saldo"] -= valor
+        jogador["reserva"] = jogador.get("reserva", 0.0) + valor
+        registrar(nome_jogador, f"Início do mês: guardou 10% ({dinheiro(valor)}) na reserva.")
+    elif numero == 3:
+        aplicar_evento(nome_jogador, "Conta de luz", -150)
+    elif numero == 4:
+        rendimento = max(0, jogador["saldo"]) * 0.01
+        aplicar_evento(nome_jogador, "Renda fixa (+1%)", rendimento)
+    elif numero == 5:
+        aplicar_evento(nome_jogador, "Pagamento das contas", -300)
+    elif numero == 6:
+        aplicar_evento(nome_jogador, "Consulta e remédios", -200)
+    elif numero == 7:
+        registrar(nome_jogador, "Jogou novamente: pode girar a roleta mais uma vez.")
+        st.info("Jogue novamente: escolha outra casa/evento.")
+    elif numero == 8:
+        st.session_state["evento_especial"] = 8
+        return
+    elif numero == 9:
+        rendimento = max(0, jogador["saldo"]) * 0.08
+        aplicar_evento(nome_jogador, "Investimento em ações (+8%)", rendimento)
+    elif numero == 10:
+        aplicar_evento(nome_jogador, "Compras inesperadas", -180)
+    elif numero == 11:
+        aplicar_evento(nome_jogador, "Renda extra", 250)
+    elif numero == 12:
+        rendimento = max(0, jogador["saldo"]) * 0.01
+        aplicar_evento(nome_jogador, "Investimento seguro (+1%)", rendimento)
+    elif numero == 13:
+        rendimento = max(0, jogador["saldo"]) * 0.015
+        aplicar_evento(nome_jogador, "Tesouro Direto (+1,5%)", rendimento)
+    elif numero == 14:
+        registrar(nome_jogador, "Jogada normal: gire a roleta e siga a instrução sorteada.")
+        st.info("Gire a roleta e escolha a casa sorteada.")
+    elif numero == 15:
+        aplicar_evento(nome_jogador, "Desconto em compras", 100)
+    elif numero == 16:
+        perda = max(0, jogador["saldo"]) * 0.08
+        aplicar_evento(nome_jogador, "Investimento em ações (−8%)", -perda)
+    elif numero == 17:
+        aplicar_evento(nome_jogador, "Conta de internet", -120)
+    elif numero == 18:
+        rendimento = max(0, jogador["saldo"]) * 0.01
+        aplicar_evento(nome_jogador, "Investimento em CDB (+1%)", rendimento)
+    elif numero == 19:
+        aplicar_evento(nome_jogador, "Venda de objeto usado", 150)
+    elif numero == 20:
+        aplicar_evento(nome_jogador, "Férias e passeios", -400)
+    elif numero == 21:
+        aplicar_evento(nome_jogador, "Compra por impulso", -200)
+    elif numero == 22:
+        rendimento = max(0, jogador["saldo"]) * 0.10
+        aplicar_evento(nome_jogador, "Investimento em ações (+10%)", rendimento)
+    elif numero == 23:
+        perda = max(0, jogador["saldo"]) * 0.15
+        aplicar_evento(nome_jogador, "Queda na bolsa (−15%)", -perda)
+    elif numero == 24:
+        registrar(nome_jogador, "Jogou novamente: pode girar a roleta mais uma vez.")
+        st.info("Jogue novamente: escolha outra casa/evento.")
+    elif numero == 25:
+        st.session_state["evento_especial"] = 25
+        return
+    elif numero == 26:
+        rendimento = max(0, jogador["saldo"]) * 0.02
+        aplicar_evento(nome_jogador, "Fundo imobiliário (+2%)", rendimento)
+    elif numero == 27:
+        aplicar_evento(nome_jogador, "Emergência médica", -2000)
+    elif numero == 28:
+        aplicar_evento(nome_jogador, "Juros por atraso", -100)
+    elif numero == 29:
+        rendimento = max(0, jogador["saldo"]) * 0.005
+        aplicar_evento(nome_jogador, "Poupança (+0,5%)", rendimento)
+    elif numero == 30:
+        if jogador["saldo"] > 0:
+            bonus = jogador["saldo"] * 0.05
+            aplicar_evento(nome_jogador, "Bônus de fechamento do mês (+5%)", bonus)
+        else:
+            registrar(nome_jogador, "Fechamento do mês: saldo não positivo, sem bônus.")
+    st.session_state["evento_especial"] = None
+
+
+with tab_eventos:
+    # Ações originais do simulador mantidas junto às 30 casas novas.
+    st.subheader("Ações extras do simulador original")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("💵 Receber salário do personagem", key=f"salario_original_{nome}", use_container_width=True):
+            aplicar_evento(nome, "Salário do personagem recebido", j["salario"])
+            st.rerun()
+        if st.button("📈 Promoção (+15% no salário)", key=f"promocao_original_{nome}", use_container_width=True):
             aumento = j["salario"] * 0.15
             j["salario"] += aumento
             registrar(nome, f"Promoção: salário aumentou {dinheiro(aumento)} (15%).")
             st.rerun()
-
     with c2:
-        if st.button("📉 Foi rebaixado (−15%)", use_container_width=True):
+        if st.button("📉 Rebaixamento (−15% no salário)", key=f"rebaixamento_original_{nome}", use_container_width=True):
             reducao = j["salario"] * 0.15
             j["salario"] -= reducao
             registrar(nome, f"Rebaixamento: salário diminuiu {dinheiro(reducao)} (15%).")
             st.rerun()
-
-        if st.button("🚑 Sofreu acidente (−R$ 600)", use_container_width=True):
+        if st.button("🚑 Acidente (−R$ 600)", key=f"acidente_original_{nome}", use_container_width=True):
             aplicar_evento(nome, "Acidente", -600)
             st.rerun()
-
     with c3:
-        if st.button("🛒 Compras de supermercado (−R$ 250)", use_container_width=True):
+        if st.button("🛒 Supermercado (−R$ 250)", key=f"supermercado_original_{nome}", use_container_width=True):
             aplicar_evento(nome, "Compras de supermercado", -250)
             st.rerun()
-
-        if st.button("🧾 Pagar despesas fixas do mês", use_container_width=True):
+        if st.button("🧾 Pagar despesas fixas", key=f"despesas_original_{nome}", use_container_width=True):
             total_despesas = sum(p["despesas"].values())
             aplicar_evento(nome, "Despesas fixas mensais", -total_despesas)
             j["meses"] += 1
             st.rerun()
 
+    st.divider()
+    st.subheader("30 casas do tabuleiro")
+    st.caption("Selecione o número da casa para aplicar o evento ao jogador escolhido.")
+    casas = [
+        "💵 1. Dia do pagamento (+R$ 3.000)",
+        "🏦 2. Economizar 10% do saldo",
+        "💡 3. Conta de luz (−R$ 150)",
+        "📈 4. Renda fixa (+1%)",
+        "🧾 5. Pagar contas (−R$ 300)",
+        "💊 6. Doença (−R$ 200)",
+        "🎲 7. Jogar novamente",
+        "📉 8. Bolsa: +15% ou −10%",
+        "📊 9. Ações (+8%)",
+        "🛍️ 10. Compras inesperadas (−R$ 180)",
+        "💼 11. Renda extra (+R$ 250)",
+        "🛡️ 12. Investimento seguro (+1%)",
+        "🇧🇷 13. Tesouro Direto (+1,5%)",
+        "🎲 14. Jogar normalmente",
+        "🏷️ 15. Desconto (+R$ 100)",
+        "📉 16. Ações (−8%)",
+        "🌐 17. Internet (−R$ 120)",
+        "🏦 18. CDB (+1%)",
+        "📦 19. Venda de usado (+R$ 150)",
+        "🏖️ 20. Férias (−R$ 400)",
+        "🛒 21. Compra por impulso (−R$ 200)",
+        "📈 22. Ações (+10%)",
+        "📉 23. Queda na bolsa (−15%)",
+        "🎲 24. Jogar novamente",
+        "🎰 25. Aposta: +30% ou −30%",
+        "🏢 26. Fundo imobiliário (+2%)",
+        "🚑 27. Emergência médica (−R$ 2.000)",
+        "⏰ 28. Juros por atraso (−R$ 100)",
+        "🐷 29. Poupança (+0,5%)",
+        "🏁 30. Fechamento do mês (bônus +5%)",
+    ]
+
+    colunas = st.columns(3)
+    for idx, descricao in enumerate(casas, start=1):
+        with colunas[(idx - 1) % 3]:
+            if st.button(descricao, key=f"casa_{idx}_{nome}", use_container_width=True):
+                executar_casa(idx, nome)
+                st.rerun()
+
+    if st.session_state.get("evento_especial") in (8, 25):
+        evento = st.session_state["evento_especial"]
+        if evento == 8:
+            st.warning("Bolsa de valores: escolha o resultado da roleta.")
+            col_g, col_p = st.columns(2)
+            if col_g.button("📈 Ganhar 15%", key=f"bolsa_ganha_{nome}"):
+                aplicar_evento(nome, "Bolsa de valores (+15%)", max(0, j["saldo"]) * 0.15)
+                st.session_state["evento_especial"] = None
+                st.rerun()
+            if col_p.button("📉 Perder 10%", key=f"bolsa_perde_{nome}"):
+                aplicar_evento(nome, "Bolsa de valores (−10%)", -max(0, j["saldo"]) * 0.10)
+                st.session_state["evento_especial"] = None
+                st.rerun()
+        else:
+            st.warning("Aposta arriscada: escolha o resultado da roleta.")
+            col_g, col_p = st.columns(2)
+            if col_g.button("🎉 Ganhar 30%", key=f"aposta_ganha_{nome}"):
+                aplicar_evento(nome, "Aposta arriscada (+30%)", max(0, j["saldo"]) * 0.30)
+                st.session_state["evento_especial"] = None
+                st.rerun()
+            if col_p.button("💸 Perder 30%", key=f"aposta_perde_{nome}"):
+                aplicar_evento(nome, "Aposta arriscada (−30%)", -max(0, j["saldo"]) * 0.30)
+                st.session_state["evento_especial"] = None
+                st.rerun()
+
     st.caption(
-        "O pagamento das despesas fixas desconta os valores do perfil. "
-        "O supermercado é um evento separado."
+        "Os rendimentos percentuais são calculados sobre o saldo disponível no momento. "
+        "A casa 2 transfere 10% do saldo para uma reserva, sem retirar esse dinheiro do patrimônio."
     )
 
 # ============================================================
@@ -283,15 +442,11 @@ with tab_bens:
         st.write(f"Preço da casa: **{dinheiro(preco_casa)}**")
         st.write(f"Valor do bem: {dinheiro(j['casa'])}")
         st.write(f"Dívida restante: {dinheiro(j['divida_casa'])}")
-
         parcela_casa = st.number_input(
-            "Parcela da casa (R$)",
-            min_value=1.0,
+            "Parcela da casa (R$)", min_value=1.0,
             value=float(max(1, round(j["salario"] * 0.10, 2))),
-            step=50.0,
-            key=f"parcela_casa_{nome}",
+            step=50.0, key=f"parcela_casa_{nome}",
         )
-
         if st.button("Comprar casa", key=f"comprar_casa_{nome}", use_container_width=True):
             if j["casa"] == 0 and j["divida_casa"] == 0:
                 j["casa"] = preco_casa
@@ -300,7 +455,6 @@ with tab_bens:
             else:
                 st.warning("Este jogador já possui uma casa ou financiamento.")
             st.rerun()
-
         if st.button("Pagar parcela da casa", key=f"pagar_casa_{nome}", use_container_width=True):
             if j["divida_casa"] <= 0:
                 st.warning("Este jogador não tem dívida de casa.")
@@ -312,20 +466,17 @@ with tab_bens:
                 j["divida_casa"] -= valor_pago
                 registrar(nome, f"Amortização da casa: pagou {dinheiro(valor_pago)}.")
             st.rerun()
-            with coluna_carro:
-                st.markdown("### 🚗 Carro")
-                st.write(f"Preço do carro: **{dinheiro(preco_carro)}**")
-                st.write(f"Valor do bem: {dinheiro(j['carro'])}")
-                st.write(f"Dívida restante: {dinheiro(j['divida_carro'])}")
 
+    with coluna_carro:
+        st.markdown("### 🚗 Carro")
+        st.write(f"Preço do carro: **{dinheiro(preco_carro)}**")
+        st.write(f"Valor do bem: {dinheiro(j['carro'])}")
+        st.write(f"Dívida restante: {dinheiro(j['divida_carro'])}")
         parcela_carro = st.number_input(
-            "Parcela do carro (R$)",
-            min_value=1.0,
+            "Parcela do carro (R$)", min_value=1.0,
             value=float(max(1, round(j["salario"] * 0.20, 2))),
-            step=50.0,
-            key=f"parcela_carro_{nome}",
+            step=50.0, key=f"parcela_carro_{nome}",
         )
-
         if st.button("Comprar carro", key=f"comprar_carro_{nome}", use_container_width=True):
             if j["carro"] == 0 and j["divida_carro"] == 0:
                 j["carro"] = preco_carro
@@ -334,7 +485,6 @@ with tab_bens:
             else:
                 st.warning("Este jogador já possui um carro ou financiamento.")
             st.rerun()
-
         if st.button("Pagar parcela do carro", key=f"pagar_carro_{nome}", use_container_width=True):
             if j["divida_carro"] <= 0:
                 st.warning("Este jogador não tem dívida de carro.")
