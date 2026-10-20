@@ -177,11 +177,7 @@ with st.sidebar:
         - **Vitória:** maior aumento percentual do patrimônio.
         """
     )
-    st.info(
-        "O PDF não informa o patrimônio inicial nem o valor das parcelas. "
-        "Por isso, o saldo inicial equivale a um salário e as parcelas são "
-        "ajustáveis, sem juros."
-    )
+    
 
 # Ranking
 st.subheader("🏆 Classificação atual")
