@@ -239,7 +239,13 @@ def executar_casa(numero, nome_jogador):
     saldo = jogador["saldo"]
 
     if numero == 1:
-        aplicar_evento(nome_jogador, "Dia do pagamento (salário)", 3000)
+        # O pagamento corresponde ao salário atual do personagem escolhido.
+        salario_atual = jogador["salario"]
+        aplicar_evento(
+            nome_jogador,
+            f"Dia do pagamento (salário de {dinheiro(salario_atual)})",
+            salario_atual,
+        )
     elif numero == 2:
         valor = max(0, jogador["saldo"] * 0.10)
         jogador["saldo"] -= valor
@@ -359,7 +365,7 @@ with tab_eventos:
     st.subheader("30 casas do tabuleiro")
     st.caption("Selecione o número da casa para aplicar o evento ao jogador escolhido.")
     casas = [
-        "💵 1. Dia do pagamento (+R$ 3.000)",
+        f"💵 1. Dia do pagamento (+{dinheiro(j['salario'])})",
         "🏦 2. Economizar 10% do saldo",
         "💡 3. Conta de luz (−R$ 150)",
         "📈 4. Renda fixa (+1%)",
