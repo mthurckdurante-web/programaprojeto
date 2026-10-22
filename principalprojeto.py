@@ -445,7 +445,7 @@ casas = [
         "🏁 30. Fechamento do mês (bônus +5%)",
     ]
 
-    colunas = st.columns(3)
+colunas = st.columns(3)
     for idx, descricao in enumerate(casas, start=1):
         with colunas[(idx - 1) % 3]:
             if st.button(
@@ -456,7 +456,7 @@ casas = [
                 executar_casa(idx, nome)
                 st.rerun()
 
-    evento = st.session_state.get("evento_especial")
+evento = st.session_state.get("evento_especial")
 
     if evento == 8:
         st.warning("Bolsa de valores: escolha o resultado da roleta.")
