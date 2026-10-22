@@ -103,7 +103,7 @@ def inicializar_jogadores():
             # O PDF não define patrimônio inicial; usamos um salário como referência.
             "saldo": salario,
             "reserva": 0.0,
-            "patrimonio_inicial": salario,
+            "patrimonio_inicial": patrimônio,
             "casa": 0.0,
             "divida_casa": 0.0,
             "carro": 0.0,
