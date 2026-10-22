@@ -329,7 +329,7 @@ def executar_casa(numero, nome_jogador):
         aplicar_evento(nome_jogador, "Tesouro Direto (+1,5%)", rendimento)
     elif numero == 14:
           registrar(nome_jogador, "Jogada normal: gire a roleta e siga a instrução sorteada.")
-        st.info("Gire a roleta e escolha a casa sorteada.")
+          st.info("Gire a roleta e escolha a casa sorteada.")
     elif numero == 15:
         aplicar_evento(nome_jogador, "Desconto em compras", 100)
     elif numero == 16:
