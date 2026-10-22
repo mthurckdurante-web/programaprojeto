@@ -112,7 +112,7 @@ def inicializar_jogadores():
             "carro": 450000.0, "moto": 0.0, "bicicleta": 0.0,
         },
         "Doutora Fernanda": {
-            "saldo": 15000.0, "reserva": 80000.0, "casa": 0.0,
+            "saldo": 18000.0, "reserva": 80000.0, "casa": 0.0,
             "carro": 150000.0, "moto": 0.0, "bicicleta": 0.0,
         },
         "Chico Corretor": {
