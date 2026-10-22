@@ -473,14 +473,14 @@ if col_p.button("📉 Perder 10%", key=f"bolsa_perde_{nome}"):
                     "Bolsa de valores (−10%)",
                     -max(0, j["saldo"]) * 0.10,
                 )
-        else:
+else:
             st.warning("Aposta arriscada: escolha o resultado da roleta.")
             col_g, col_p = st.columns(2)
-            if col_g.button("🎉 Ganhar 30%", key=f"aposta_ganha_{nome}"):
+if col_g.button("🎉 Ganhar 30%", key=f"aposta_ganha_{nome}"):
                 aplicar_evento(nome, "Aposta arriscada (+30%)", max(0, j["saldo"]) * 0.30)
                 st.session_state["evento_especial"] = None
                 st.rerun()
-            if col_p.button("💸 Perder 30%", key=f"aposta_perde_{nome}"):
+    if col_p.button("💸 Perder 30%", key=f"aposta_perde_{nome}"):
                 aplicar_evento(nome, "Aposta arriscada (−30%)", -max(0, j["saldo"]) * 0.30)
                 st.session_state["evento_especial"] = None
                 st.rerun()
