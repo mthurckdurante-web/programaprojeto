@@ -13,7 +13,7 @@ PERSONAGENS = {
         "estado_civil": "Solteiro",
         "filhos": 0,
         "salario": 1850.0,
-        "patrimônio": 9150.0,
+        "patrimônio": 8850.0,
         "despesas": {
             "Aluguel": 650, "Alimentação": 350, "Transporte": 400,
             "Contas": 180, "Internet": 80, "Outros": 100, "IPVA": 50
@@ -26,7 +26,7 @@ PERSONAGENS = {
         "estado_civil": "Solteira",
         "filhos": 2,
         "salario": 2300.0,
-        "patrimônio": 4600.0,
+        "patrimônio": 3100.0,
         "despesas": {
             "Aluguel": 700, "Alimentação": 550, "Transporte": 150,
             "Contas": 100, "Internet": 30, "Outros": 100, "Materiais": 200, "IPVA": 0
@@ -52,7 +52,7 @@ PERSONAGENS = {
         "estado_civil": "Casado",
         "filhos": 2,
         "salario": 18000.0,
-        "patrimônio": 39000.0,
+        "patrimônio": 248000.0,
         "despesas": {
             "Aluguel": 4500, "Alimentação": 2500, "Transporte": 1400,
             "Contas": 900, "Internet": 200, "Outros": 1500, "IPVA": 350
