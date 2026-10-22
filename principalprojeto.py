@@ -95,11 +95,9 @@ def dinheiro(valor):
 
 
 def inicializar_jogadores():
-    """Cria os jogadores com bens e patrimônio coerentes com os valores iniciais."""
+    """Cria os jogadores com bens e patrimônio inicial."""
     jogadores = {}
 
-    # Distribuição inicial dos bens e do dinheiro.
-    # A soma saldo + reserva + bens - dívidas corresponde ao patrimônio inicial.
     bens_iniciais = {
         "José Correria": {
             "saldo": 300.0, "reserva": 0.0, "casa": 0.0,
@@ -127,10 +125,11 @@ def inicializar_jogadores():
         },
     }
 
- for nome, personagem in PERSONAGENS.items():
+    for nome, personagem in PERSONAGENS.items():
         salario = float(personagem["salario"])
         patrimonio_inicial = float(personagem["patrimônio"])
         bens = bens_iniciais.get(nome, {})
+
         jogador = {
             "salario": salario,
             "saldo": float(bens.get("saldo", 0.0)),
@@ -147,6 +146,7 @@ def inicializar_jogadores():
             ],
             "meses": 0,
         }
+
         jogadores[nome] = jogador
 
     return jogadores
