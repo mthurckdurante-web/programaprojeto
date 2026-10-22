@@ -452,7 +452,7 @@ for idx, descricao in enumerate(casas, start=1):
                 executar_casa(idx, nome)
                 st.rerun()
 
-    if st.session_state.get("evento_especial") in (8, 25):
+        if st.session_state.get("evento_especial") in (8, 25):
         evento = st.session_state["evento_especial"]
         if evento == 8:
             st.warning("Bolsa de valores: escolha o resultado da roleta.")
