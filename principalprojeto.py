@@ -128,6 +128,7 @@ def inicializar_jogadores():
     }
 
   for nome, personagem in PERSONAGENS.items():
+      
         salario = float(personagem["salario"])
         patrimonio_inicial = float(personagem["patrimônio"])
         bens = bens_iniciais.get(nome, {})
