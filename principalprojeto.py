@@ -446,7 +446,7 @@ casas = [
     ]
 
 colunas = st.columns(3)
-    for idx, descricao in enumerate(casas, start=1):
+for idx, descricao in enumerate(casas, start=1):
         with colunas[(idx - 1) % 3]:
             if st.button(
                 descricao,
