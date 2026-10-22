@@ -477,7 +477,7 @@ for idx, descricao in enumerate(casas, start=1):
                 st.session_state["evento_especial"] = None
                 st.rerun()
 
-    st.caption(
+st.caption(
         "Os rendimentos percentuais são calculados sobre o saldo disponível no momento. "
         "A casa 2 transfere 10% do saldo para uma reserva, sem retirar esse dinheiro do patrimônio."
     )
