@@ -283,7 +283,7 @@ def executar_casa(numero, nome_jogador):
     jogador = st.session_state.jogadores[nome_jogador]
     saldo = jogador["saldo"]
 
-    if numero == 1:
+       if numero == 1:
         # O pagamento corresponde ao salário atual do personagem escolhido.
         salario_atual = jogador["salario"]
         aplicar_evento(
@@ -291,11 +291,14 @@ def executar_casa(numero, nome_jogador):
             f"Dia do pagamento (salário de {dinheiro(salario_atual)})",
             salario_atual,
         )
-        elif numero == 2:
+    elif numero == 2:
         valor = max(0, jogador["saldo"] * 0.10)
         jogador["saldo"] -= valor
         jogador["reserva"] = jogador.get("reserva", 0.0) + valor
-        registrar(nome_jogador, f"Início do mês: guardou 10% ({dinheiro(valor)}) na reserva.")
+        registrar(
+            nome_jogador,
+            f"Início do mês: guardou 10% ({dinheiro(valor)}) na reserva."
+        )
     elif numero == 3:
         aplicar_evento(nome_jogador, "Conta de luz", -150)
     elif numero == 4:
