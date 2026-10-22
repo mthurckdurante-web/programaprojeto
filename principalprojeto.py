@@ -410,7 +410,7 @@ with tab_eventos:
             st.rerun()
 
 st.divider()
-    st.subheader("30 casas do tabuleiro")
+st.subheader("30 casas do tabuleiro")
     st.caption("Selecione o número da casa para aplicar o evento ao jogador escolhido.")
     casas = [
         f"💵 1. Dia do pagamento (+{dinheiro(j['salario'])})",
