@@ -451,8 +451,8 @@ for idx, descricao in enumerate(casas, start=1):
             if st.button(descricao, key=f"casa_{idx}_{nome}", use_container_width=True):
                 executar_casa(idx, nome)
                 st.rerun()
-
-           evento = st.session_state.get("evento_especial")
+ 
+evento = st.session_state.get("evento_especial")
 
         if evento == 8:
             st.warning("Bolsa de valores: escolha o resultado da roleta.")
