@@ -100,27 +100,27 @@ def inicializar_jogadores():
 
     bens_iniciais = {
         "José Correria": {
-            "saldo": 300.0, "reserva": 0.0, "casa": 0.0,
+            "saldo": 1850.0, "reserva": 0.0, "casa": 0.0,
             "carro": 0.0, "moto": 7000.0, "bicicleta": 0.0,
         },
         "Patrícia Trabalhadora": {
-            "saldo": 1500.0, "reserva": 0.0, "casa": 0.0,
+            "saldo": 2300.0, "reserva": 0.0, "casa": 0.0,
             "carro": 0.0, "moto": 0.0, "bicicleta": 800.0,
         },
         "Barão Guimarães": {
-            "saldo": 0.0, "reserva": 2000000.0, "casa": 3000000.0,
+            "saldo": 50000.0, "reserva": 2000000.0, "casa": 3000000.0,
             "carro": 450000.0, "moto": 0.0, "bicicleta": 0.0,
         },
         "Doutora Fernanda": {
-            "saldo": 0.0, "reserva": 80000.0, "casa": 0.0,
-            "carro": 130000.0, "moto": 0.0, "bicicleta": 0.0,
+            "saldo": 15000.0, "reserva": 80000.0, "casa": 0.0,
+            "carro": 150000.0, "moto": 0.0, "bicicleta": 0.0,
         },
         "Chico Corretor": {
-            "saldo": 0.0, "reserva": 12000.0, "casa": 0.0,
+            "saldo": 6000.0, "reserva": 12000.0, "casa": 0.0,
             "carro": 45000.0, "moto": 0.0, "bicicleta": 0.0,
         },
         "Marcos TI": {
-            "saldo": 0.0, "reserva": 20000.0, "casa": 0.0,
+            "saldo": 6000.0, "reserva": 20000.0, "casa": 0.0,
             "carro": 50000.0, "moto": 0.0, "bicicleta": 0.0,
         },
     }
