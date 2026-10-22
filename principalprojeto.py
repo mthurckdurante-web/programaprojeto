@@ -445,47 +445,64 @@ casas = [
         "🏁 30. Fechamento do mês (bônus +5%)",
     ]
 
-colunas = st.columns(3)
-for idx, descricao in enumerate(casas, start=1):
+    colunas = st.columns(3)
+    for idx, descricao in enumerate(casas, start=1):
         with colunas[(idx - 1) % 3]:
-            if st.button(descricao, key=f"casa_{idx}_{nome}", use_container_width=True):
+            if st.button(
+                descricao,
+                key=f"casa_{idx}_{nome}",
+                use_container_width=True,
+            ):
                 executar_casa(idx, nome)
                 st.rerun()
- 
-evento = st.session_state.get("evento_especial")
 
-if evento == 8:
-                st.warning("Bolsa de valores: escolha o resultado da roleta.")
-                col_g, col_p = st.columns(2)
+    evento = st.session_state.get("evento_especial")
 
-if col_g.button("📈 Ganhar 15%", key=f"bolsa_ganha_{nome}"):
-                aplicar_evento(
-                    nome,
-                    "Bolsa de valores (+15%)",
-                    max(0, j["saldo"]) * 0.15,
-                )
-                st.session_state["evento_especial"] = None
-                st.rerun()
+    if evento == 8:
+        st.warning("Bolsa de valores: escolha o resultado da roleta.")
+        col_g, col_p = st.columns(2)
 
-if col_p.button("📉 Perder 10%", key=f"bolsa_perde_{nome}"):
-                aplicar_evento(
-                    nome,
-                    "Bolsa de valores (−10%)",
-                    -max(0, j["saldo"]) * 0.10,
-                )
-else:
-            st.warning("Aposta arriscada: escolha o resultado da roleta.")
-            col_g, col_p = st.columns(2)
-if col_g.button("🎉 Ganhar 30%", key=f"aposta_ganha_{nome}"):
-                aplicar_evento(nome, "Aposta arriscada (+30%)", max(0, j["saldo"]) * 0.30)
-                st.session_state["evento_especial"] = None
-                st.rerun()
-if col_p.button("💸 Perder 30%", key=f"aposta_perde_{nome}"):
-                aplicar_evento(nome, "Aposta arriscada (−30%)", -max(0, j["saldo"]) * 0.30)
-                st.session_state["evento_especial"] = None
-                st.rerun()
+        if col_g.button("📈 Ganhar 15%", key=f"bolsa_ganha_{nome}"):
+            aplicar_evento(
+                nome,
+                "Bolsa de valores (+15%)",
+                max(0, j["saldo"]) * 0.15,
+            )
+            st.session_state["evento_especial"] = None
+            st.rerun()
 
-st.caption(
+        if col_p.button("📉 Perder 10%", key=f"bolsa_perde_{nome}"):
+            aplicar_evento(
+                nome,
+                "Bolsa de valores (−10%)",
+                -max(0, j["saldo"]) * 0.10,
+            )
+            st.session_state["evento_especial"] = None
+            st.rerun()
+
+    elif evento == 25:
+        st.warning("Aposta arriscada: escolha o resultado da roleta.")
+        col_g, col_p = st.columns(2)
+
+        if col_g.button("🎉 Ganhar 30%", key=f"aposta_ganha_{nome}"):
+            aplicar_evento(
+                nome,
+                "Aposta arriscada (+30%)",
+                max(0, j["saldo"]) * 0.30,
+            )
+            st.session_state["evento_especial"] = None
+            st.rerun()
+
+        if col_p.button("💸 Perder 30%", key=f"aposta_perde_{nome}"):
+            aplicar_evento(
+                nome,
+                "Aposta arriscada (−30%)",
+                -max(0, j["saldo"]) * 0.30,
+            )
+            st.session_state["evento_especial"] = None
+            st.rerun()
+
+    st.caption(
         "Os rendimentos percentuais são calculados sobre o saldo disponível no momento. "
         "A casa 2 transfere 10% do saldo para uma reserva, sem retirar esse dinheiro do patrimônio."
     )
