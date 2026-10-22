@@ -94,59 +94,65 @@ def dinheiro(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-
 def inicializar_jogadores():
+    """Cria os jogadores com bens e patrimônio coerentes com os valores iniciais."""
     jogadores = {}
-
-    patrimonios = {
-        "José Correria": 7300.0,
-        "Patrícia Trabalhadora": 2300.0,
-        "Barão Guimarães": 5450000.0,
-        "Doutora Fernanda": 210000.0,
-        "Chico Corretor": 57000.0,
-        "Marcos TI": 70000.0,
+ 
+    # Distribuição inicial dos bens e do dinheiro.
+    # A soma saldo + reserva + bens - dívidas corresponde ao patrimônio inicial.
+    bens_iniciais = {
+        "José Correria": {
+            "saldo": 300.0, "reserva": 0.0, "casa": 0.0,
+            "carro": 0.0, "moto": 7000.0, "bicicleta": 0.0,
+        },
+        "Patrícia Trabalhadora": {
+            "saldo": 1500.0, "reserva": 0.0, "casa": 0.0,
+            "carro": 0.0, "moto": 0.0, "bicicleta": 800.0,
+        },
+        "Barão Guimarães": {
+            "saldo": 0.0, "reserva": 2000000.0, "casa": 3000000.0,
+            "carro": 450000.0, "moto": 0.0, "bicicleta": 0.0,
+        },
+        "Doutora Fernanda": {
+            "saldo": 0.0, "reserva": 80000.0, "casa": 0.0,
+            "carro": 130000.0, "moto": 0.0, "bicicleta": 0.0,
+        },
+        "Chico Corretor": {
+            "saldo": 0.0, "reserva": 12000.0, "casa": 0.0,
+            "carro": 45000.0, "moto": 0.0, "bicicleta": 0.0,
+        },
+        "Marcos TI": {
+            "saldo": 0.0, "reserva": 20000.0, "casa": 0.0,
+            "carro": 50000.0, "moto": 0.0, "bicicleta": 0.0,
+        },
     }
 
-    bens = {
-        "José Correria": {"carro": 0.0, "moto": 7000.0, "casa": 0.0},
-        "Patrícia Trabalhadora": {"carro": 0.0, "moto": 0.0, "casa": 0.0},
-        "Barão Guimarães": {"carro": 450000.0, "moto": 0.0, "casa": 3000000.0},
-        "Doutora Fernanda": {"carro": 130000.0, "moto": 0.0, "casa": 0.0},
-        "Chico Corretor": {"carro": 45000.0, "moto": 0.0, "casa": 0.0},
-        "Marcos TI": {"carro": 50000.0, "moto": 0.0, "casa": 0.0},
-    }
-
-    for nome, personagem in PERSONAGENS.items():
+  for nome, personagem in PERSONAGENS.items():
         salario = float(personagem["salario"])
-        patrimonio = patrimonios.get(nome, 0.0)
-        bens_jogador = bens.get(
-            nome,
-            {"carro": 0.0, "moto": 0.0, "casa": 0.0}
-        )
-
-        jogadores[nome] = {
+        patrimonio_inicial = float(personagem["patrimônio"])
+        bens = bens_iniciais.get(nome, {})
+        jogador = {
             "salario": salario,
-            "saldo": salario,
-            "reserva": 0.0,
-            "patrimonio_inicial": patrimonio,
-            "casa": bens_jogador["casa"],
+            "saldo": float(bens.get("saldo", 0.0)),
+            "reserva": float(bens.get("reserva", 0.0)),
+            "patrimonio_inicial": patrimonio_inicial,
+            "casa": float(bens.get("casa", 0.0)),
             "divida_casa": 0.0,
-            "carro": bens_jogador["carro"],
-            "moto": bens_jogador["moto"],
+            "carro": float(bens.get("carro", 0.0)),
+            "moto": float(bens.get("moto", 0.0)),
+            "bicicleta": float(bens.get("bicicleta", 0.0)),
             "divida_carro": 0.0,
             "historico": [
-                "Início da partida: saldo inicial equivalente a um salário."
+                "Início da partida: patrimônio inicial e bens cadastrados."
             ],
             "meses": 0,
         }
+        jogadores[nome] = jogador
 
     return jogadores
 
-
-
 def registrar(nome, mensagem):
     st.session_state.jogadores[nome]["historico"].insert(0, mensagem)
-
 
 def aplicar_evento(nome, descricao, valor):
     jogador = st.session_state.jogadores[nome]
@@ -157,14 +163,15 @@ def aplicar_evento(nome, descricao, valor):
 def patrimonio(nome):
     jogador = st.session_state.jogadores[nome]
     return (
-        jogador["saldo"]
-        + jogador.get("reserva", 0.0)
-        + jogador["casa"]
-        + jogador["carro"]
-        - jogador["divida_casa"]
-        - jogador["divida_carro"]
+        float(jogador.get("saldo", 0.0))
+        + float(jogador.get("reserva", 0.0))
+        + float(jogador.get("casa", 0.0))
+        + float(jogador.get("carro", 0.0))
+        + float(jogador.get("moto", 0.0))
+        + float(jogador.get("bicicleta", 0.0))
+        - float(jogador.get("divida_casa", 0.0))
+        - float(jogador.get("divida_carro", 0.0))
     )
-
 
 def variacao_patrimonio(nome):
     jogador = st.session_state.jogadores[nome]
@@ -173,35 +180,34 @@ def variacao_patrimonio(nome):
         return 0.0
     return (patrimonio(nome) - inicial) / inicial * 100
 
-
 # ============================================================
 # INICIALIZAÇÃO DO ESTADO DA PARTIDA
 # ============================================================
-if "jogadores" not in st.session_state:
+# A versão força uma única reinicialização dos dados antigos para aplicar
+# os patrimônios e bens iniciais corrigidos. Depois, a partida é preservada.
+VERSAO_DADOS = 2
+if (
+    "jogadores" not in st.session_state
+    or st.session_state.get("versao_dados") != VERSAO_DADOS
+):
     st.session_state.jogadores = inicializar_jogadores()
+    st.session_state.versao_dados = VERSAO_DADOS
 
-# Se a lista de personagens mudar durante o desenvolvimento, completa os dados ausentes.
+# Compatibilidade com jogadores salvos em versões anteriores.
 for nome_personagem, dados_personagem in PERSONAGENS.items():
     if nome_personagem not in st.session_state.jogadores:
-        salario = float(dados_personagem["salario"])
-        st.session_state.jogadores[nome_personagem] = {
-            "salario": salario,
-            "saldo": salario,
-            "reserva": 0.0,
-            "patrimonio_inicial": salario,
-            "casa": 0.0,
-            "divida_casa": 0.0,
-            "carro": 0.0,
-            "divida_carro": 0.0,
-            "historico": ["Jogador adicionado à partida."],
-            "meses": 0,
-        }
+        novo_jogador = inicializar_jogadores()[nome_personagem]
+        st.session_state.jogadores[nome_personagem] = novo_jogador
 
-# Compatibilidade com partidas iniciadas em versões anteriores
 for jogador_existente in st.session_state.jogadores.values():
     jogador_existente.setdefault("reserva", 0.0)
-
-# ============================================================
+    jogador_existente.setdefault("moto", 0.0)
+    jogador_existente.setdefault("bicicleta", 0.0)
+    jogador_existente.setdefault("casa", 0.0)
+    jogador_existente.setdefault("carro", 0.0)
+    jogador_existente.setdefault("divida_casa", 0.0)
+    jogador_existente.setdefault("divida_carro", 0.0)
+    # ============================================================
 # INTERFACE
 # ============================================================
 st.title("💰 Jogo da Vida Real")
@@ -266,17 +272,6 @@ m4.metric(
 tab_eventos, tab_bens, tab_despesas, tab_historico = st.tabs(
     ["🎲 Eventos e ações", "🏠 Casa e carro", "🧾 Despesas mensais", "📜 Histórico"]
 )
-
-# ============================================================
-# EVENTOS DO TABULEIRO (30 casas)
-# ============================================================
-def executar_casa(numero, nome_jogador):
-    jogador = st.session_state.jogadores[nome_jogador]
-    saldo = jogador["saldo"]
-
-    if numero == 1:
-        # O pagamento corresponde ao salário atual do personagem escolhido.
-        salario_atual = jogador["salario"]
         aplicar_evento(
             nome_jogador,
             f"Dia do pagamento (salário de {dinheiro(salario_atual)})",
@@ -364,6 +359,92 @@ def executar_casa(numero, nome_jogador):
             registrar(nome_jogador, "Fechamento do mês: saldo não positivo, sem bônus.")
     st.session_state["evento_especial"] = None
 
+ aplicar_evento(
+            nome_jogador,
+            f"Dia do pagamento (salário de {dinheiro(salario_atual)})",
+            salario_atual,
+        )
+    elif numero == 2:
+        valor = max(0, jogador["saldo"] * 0.10)
+        jogador["saldo"] -= valor
+        jogador["reserva"] = jogador.get("reserva", 0.0) + valor
+        registrar(nome_jogador, f"Início do mês: guardou 10% ({dinheiro(valor)}) na reserva.")
+    elif numero == 3:
+        aplicar_evento(nome_jogador, "Conta de luz", -150)
+    elif numero == 4:
+        rendimento = max(0, jogador["saldo"]) * 0.01
+        aplicar_evento(nome_jogador, "Renda fixa (+1%)", rendimento)
+    elif numero == 5:
+        aplicar_evento(nome_jogador, "Pagamento das contas", -300)
+    elif numero == 6:
+        aplicar_evento(nome_jogador, "Consulta e remédios", -200)
+    elif numero == 7:
+        registrar(nome_jogador, "Jogou novamente: pode girar a roleta mais uma vez.")
+        st.info("Jogue novamente: escolha outra casa/evento.")
+    elif numero == 8:
+        st.session_state["evento_especial"] = 8
+        return
+    elif numero == 9:
+        rendimento = max(0, jogador["saldo"]) * 0.08
+        aplicar_evento(nome_jogador, "Investimento em ações (+8%)", rendimento)
+    elif numero == 10:
+        aplicar_evento(nome_jogador, "Compras inesperadas", -180)
+    elif numero == 11:
+        aplicar_evento(nome_jogador, "Renda extra", 250)
+    elif numero == 12:
+        rendimento = max(0, jogador["saldo"]) * 0.01
+        aplicar_evento(nome_jogador, "Investimento seguro (+1%)", rendimento)
+    elif numero == 13:
+        rendimento = max(0, jogador["saldo"]) * 0.015
+        aplicar_evento(nome_jogador, "Tesouro Direto (+1,5%)", rendimento)
+    elif numero == 14:
+        registrar(nome_jogador, "Jogada normal: gire a roleta e siga a instrução sorteada.")
+        st.info("Gire a roleta e escolha a casa sorteada.")
+    elif numero == 15:
+        aplicar_evento(nome_jogador, "Desconto em compras", 100)
+    elif numero == 16:
+        perda = max(0, jogador["saldo"]) * 0.08
+        aplicar_evento(nome_jogador, "Investimento em ações (−8%)", -perda)
+    elif numero == 17:
+        aplicar_evento(nome_jogador, "Conta de internet", -120)
+    elif numero == 18:
+        rendimento = max(0, jogador["saldo"]) * 0.01
+        aplicar_evento(nome_jogador, "Investimento em CDB (+1%)", rendimento)
+    elif numero == 19:
+        aplicar_evento(nome_jogador, "Venda de objeto usado", 150)
+    elif numero == 20:
+        aplicar_evento(nome_jogador, "Férias e passeios", -400)
+    elif numero == 21:
+        aplicar_evento(nome_jogador, "Compra por impulso", -200)
+    elif numero == 22:
+        rendimento = max(0, jogador["saldo"]) * 0.10
+        aplicar_evento(nome_jogador, "Investimento em ações (+10%)", rendimento)
+    elif numero == 23:
+        perda = max(0, jogador["saldo"]) * 0.15
+        aplicar_evento(nome_jogador, "Queda na bolsa (−15%)", -perda)
+    elif numero == 24:
+        registrar(nome_jogador, "Jogou novamente: pode girar a roleta mais uma vez.")
+        st.info("Jogue novamente: escolha outra casa/evento.")
+    elif numero == 25:
+        st.session_state["evento_especial"] = 25
+        return
+    elif numero == 26:
+        rendimento = max(0, jogador["saldo"]) * 0.02
+        aplicar_evento(nome_jogador, "Fundo imobiliário (+2%)", rendimento)
+    elif numero == 27:
+        aplicar_evento(nome_jogador, "Emergência médica", -2000)
+    elif numero == 28:
+aplicar_evento(nome_jogador, "Juros por atraso", -100)
+    elif numero == 29:
+        rendimento = max(0, jogador["saldo"]) * 0.005
+        aplicar_evento(nome_jogador, "Poupança (+0,5%)", rendimento)
+    elif numero == 30:
+        if jogador["saldo"] > 0:
+            bonus = jogador["saldo"] * 0.05
+            aplicar_evento(nome_jogador, "Bônus de fechamento do mês (+5%)", bonus)
+        else:
+            registrar(nome_jogador, "Fechamento do mês: saldo não positivo, sem bônus.")
+    st.session_state["evento_especial"] = None
 
 with tab_eventos:
     # Ações originais do simulador mantidas junto às 30 casas novas.
@@ -397,7 +478,7 @@ with tab_eventos:
             j["meses"] += 1
             st.rerun()
 
-    st.divider()
+st.divider()
     st.subheader("30 casas do tabuleiro")
     st.caption("Selecione o número da casa para aplicar o evento ao jogador escolhido.")
     casas = [
@@ -440,7 +521,7 @@ with tab_eventos:
                 executar_casa(idx, nome)
                 st.rerun()
 
-    if st.session_state.get("evento_especial") in (8, 25):
+if st.session_state.get("evento_especial") in (8, 25):
         evento = st.session_state["evento_especial"]
         if evento == 8:
             st.warning("Bolsa de valores: escolha o resultado da roleta.")
