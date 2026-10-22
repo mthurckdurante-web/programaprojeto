@@ -65,7 +65,7 @@ PERSONAGENS = {
         "estado_civil": "Casado",
         "filhos": 1,
         "salario": 6000.0,
-        "patrimônio": 63.000.0,
+        "patrimônio": 63000.0,
         "despesas": {
             "Aluguel": 1800, "Alimentação": 1200, "Transporte": 600,
             "Contas": 450, "Internet": 120, "Outros": 800, "IPVA": 120
