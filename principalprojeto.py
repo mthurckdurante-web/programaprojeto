@@ -13,6 +13,7 @@ PERSONAGENS = {
         "estado_civil": "Solteiro",
         "filhos": 0,
         "salario": 1850.0,
+        "patrimônio": 7300.0,
         "despesas": {
             "Aluguel": 650, "Alimentação": 350, "Transporte": 400,
             "Contas": 180, "Internet": 80, "Outros": 100, "IPVA": 50
@@ -25,6 +26,7 @@ PERSONAGENS = {
         "estado_civil": "Solteira",
         "filhos": 2,
         "salario": 2300.0,
+        "patrimônio": 2300.0,
         "despesas": {
             "Aluguel": 700, "Alimentação": 550, "Transporte": 150,
             "Contas": 100, "Internet": 30, "Outros": 100, "Materiais": 200, "IPVA": 0
@@ -37,6 +39,7 @@ PERSONAGENS = {
         "estado_civil": "Casado",
         "filhos": 2,
         "salario": 50000.0,
+        "patrimônio": 5450000.0,
         "despesas": {
             "Aluguel": 0, "Alimentação": 5000, "Transporte": 3000,
             "Contas": 2000, "Internet": 350, "Outros": 5000, "IPVA": 1000
@@ -49,6 +52,7 @@ PERSONAGENS = {
         "estado_civil": "Casado",
         "filhos": 2,
         "salario": 18000.0,
+        "patrimônio": 210000.0,
         "despesas": {
             "Aluguel": 4500, "Alimentação": 2500, "Transporte": 1400,
             "Contas": 900, "Internet": 200, "Outros": 1500, "IPVA": 350
@@ -61,6 +65,7 @@ PERSONAGENS = {
         "estado_civil": "Casado",
         "filhos": 1,
         "salario": 6000.0,
+        "patrimônio": 57000.0,
         "despesas": {
             "Aluguel": 1800, "Alimentação": 1200, "Transporte": 600,
             "Contas": 450, "Internet": 120, "Outros": 800, "IPVA": 120
@@ -73,6 +78,7 @@ PERSONAGENS = {
         "estado_civil": "Solteiro",
         "filhos": 0,
         "salario": 6000.0,
+        "patrimônio": 70000.0,
         "despesas": {
             "Aluguel": 2000, "Alimentação": 1400, "Transporte": 550,
             "Contas": 350, "Internet": 180, "Outros": 900, "IPVA": 120
