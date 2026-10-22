@@ -390,7 +390,7 @@ with tab_eventos:
             j["salario"] += aumento
             registrar(nome, f"Promoção: salário aumentou {dinheiro(aumento)} (15%).")
             st.rerun()
-   with c2:
+    with c2:
         if st.button("📉 Rebaixamento (−15% no salário)", key=f"rebaixamento_original_{nome}", use_container_width=True):
             reducao = j["salario"] * 0.15
             j["salario"] -= reducao
