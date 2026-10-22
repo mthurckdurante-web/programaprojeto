@@ -454,7 +454,7 @@ for idx, descricao in enumerate(casas, start=1):
  
 evento = st.session_state.get("evento_especial")
 
-            if evento == 8:
+if evento == 8:
                 st.warning("Bolsa de valores: escolha o resultado da roleta.")
                 col_g, col_p = st.columns(2)
 
