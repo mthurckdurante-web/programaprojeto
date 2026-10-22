@@ -283,7 +283,7 @@ def executar_casa(numero, nome_jogador):
     jogador = st.session_state.jogadores[nome_jogador]
     saldo = jogador["saldo"]
 
-       if numero == 1:
+    if numero == 1:
         # O pagamento corresponde ao salário atual do personagem escolhido.
         salario_atual = jogador["salario"]
         aplicar_evento(
