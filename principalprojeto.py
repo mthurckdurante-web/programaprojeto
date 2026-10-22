@@ -94,24 +94,54 @@ def dinheiro(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+
 def inicializar_jogadores():
     jogadores = {}
+
+    patrimonios = {
+        "José Correria": 7300.0,
+        "Patrícia Trabalhadora": 2300.0,
+        "Barão Guimarães": 5450000.0,
+        "Doutora Fernanda": 210000.0,
+        "Chico Corretor": 57000.0,
+        "Marcos TI": 70000.0,
+    }
+
+    bens = {
+        "José Correria": {"carro": 0.0, "moto": 7000.0, "casa": 0.0},
+        "Patrícia Trabalhadora": {"carro": 0.0, "moto": 0.0, "casa": 0.0},
+        "Barão Guimarães": {"carro": 450000.0, "moto": 0.0, "casa": 3000000.0},
+        "Doutora Fernanda": {"carro": 130000.0, "moto": 0.0, "casa": 0.0},
+        "Chico Corretor": {"carro": 45000.0, "moto": 0.0, "casa": 0.0},
+        "Marcos TI": {"carro": 50000.0, "moto": 0.0, "casa": 0.0},
+    }
+
     for nome, personagem in PERSONAGENS.items():
         salario = float(personagem["salario"])
+        patrimonio = patrimonios.get(nome, 0.0)
+        bens_jogador = bens.get(
+            nome,
+            {"carro": 0.0, "moto": 0.0, "casa": 0.0}
+        )
+
         jogadores[nome] = {
             "salario": salario,
-            # O PDF não define patrimônio inicial; usamos um salário como referência.
             "saldo": salario,
             "reserva": 0.0,
-            "patrimonio_inicial": patrimônio,
-            "casa": 0.0,
+            "patrimonio_inicial": patrimonio,
+            "casa": bens_jogador["casa"],
             "divida_casa": 0.0,
-            "carro": 0.0,
+            "carro": bens_jogador["carro"],
+            "moto": bens_jogador["moto"],
             "divida_carro": 0.0,
-            "historico": ["Início da partida: saldo inicial equivalente a um salário."],
+            "historico": [
+                "Início da partida: saldo inicial equivalente a um salário."
+            ],
             "meses": 0,
         }
+
     return jogadores
+
 
 
 def registrar(nome, mensagem):
